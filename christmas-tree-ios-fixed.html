@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Merry Christmas 丘嘉奎 - 3D 粒子浪漫星夜</title>
+    <style>
+        /* 基础重置与全屏纯黑背景，兼容 iPhone/iPad 安全区域与防滚动 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #000000;
+            touch-action: manipulation;
+            font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Serif SC", serif;
+        }
+
+        /* 3D 粒子画布：强制占满全屏且显式置于背景层 */
+        #christmas-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            height: 100dvh;
+            display: block;
+            -webkit-transform: translateZ(0);
+            transform: translateZ(0);
+            background: #000000;
+            z-index: 1;
+        }
+
+        /* 桌面端 & iPad 宽屏左侧文字信息叠加层（完全透明背景，不遮挡画布） */
+        .overlay-container {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            background: transparent;
+            pointer-events: none;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            padding: 0 7vw;
+        }
+
+        .text-panel {
+            max-width: 520px;
+            display: flex;
+            flex-direction: column;
+            gap: 1.05rem;
+            position: relative;
+        }
+
+        /* 顶部科技感代码装饰标签 */
+        .tech-tag {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Courier New", monospace;
+            font-size: 0.78rem;
+            letter-spacing: 0.22em;
+            color: rgba(255, 160, 205, 0.85);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-transform: uppercase;
+            opacity: 0;
+            animation: fadeInSlide 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards 0.15s;
+        }
+
+        .tech-tag::before {
+            content: '';
+            display: inline-block;
+            width: 24px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #ff69b4);
+            box-shadow: 0 0 8px #ff69b4;
+        }
+
+        /* 主标题：Merry Christmas 流光艺术字 */
+        .main-title {
+            font-family: "Snell Roundhand", "Brush Script MT", "Apple Chancery", "Georgia", "Times New Roman", cursive, serif;
+            font-style: italic;
+            font-size: clamp(2.8rem, 5.4vw, 5.2rem);
+            font-weight: 700;
+            line-height: 1.12;
+            letter-spacing: 0.02em;
+            background: linear-gradient(
+                110deg,
+                #ffffff 0%,
+                #ffd1e8 25%,
+                #ff69b4 48%,
+                #ffffff 55%,
+                #ffb6d9 78%,
+                #ffffff 100%
+            );
+            background-size: 220% auto;
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            filter: drop-shadow(0 0 16px rgba(255, 105, 180, 0.5));
+            animation: 
+                shimmerFlow 5s linear infinite,
+                fadeInSlide 1s cubic-bezier(0.22, 1, 0.36, 1) forwards 0.3s;
+            opacity: 0;
+        }
+
+        /* 专属名字区域 */
+        .name-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: -0.15rem;
+            opacity: 0;
+            animation: fadeInSlide 1s cubic-bezier(0.22, 1, 0.36, 1) forwards 0.55s;
+        }
+
+        .name-prefix {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 0.88rem;
+            color: rgba(255, 255, 255, 0.65);
+            letter-spacing: 0.14em;
+        }
+
+        .recipient-name {
+            font-family: "PingFang SC", "Hiragino Sans GB", "Songti SC", "SimSun", serif;
+            font-size: clamp(1.85rem, 3.4vw, 3rem);
+            font-weight: 700;
+            letter-spacing: 0.2em;
+            color: #ffffff;
+            text-shadow: 
+                0 0 12px rgba(255, 255, 255, 0.92),
+                0 0 26px rgba(255, 105, 180, 0.88),
+                0 0 48px rgba(255, 20, 147, 0.6);
+        }
+
+        /* 打字机光标 */
+        .cursor {
+            display: inline-block;
+            width: 3px;
+            height: 1.05em;
+            background-color: #ff69b4;
+            box-shadow: 0 0 10px #ff69b4, 0 0 20px #ffffff;
+            margin-left: 2px;
+            vertical-align: middle;
+            animation: blinkCursor 0.9s step-end infinite;
+        }
+
+        /* 浪漫程序员寄语（打字机动态显示） */
+        .code-subtitle {
+            margin-top: 0.4rem;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "PingFang SC", monospace;
+            font-size: clamp(0.82rem, 1.08vw, 0.98rem);
+            line-height: 1.75;
+            color: rgba(248, 232, 242, 0.84);
+            letter-spacing: 0.06em;
+            border-left: 2px solid rgba(255, 105, 180, 0.65);
+            padding-left: 12px;
+            min-height: 3.5em;
+            text-shadow: 0 0 10px rgba(255, 182, 217, 0.35);
+        }
+
+        /* 底部微交互提示 */
+        .interaction-hint {
+            position: fixed;
+            bottom: max(18px, env(safe-area-inset-bottom));
+            left: 7vw;
+            z-index: 10;
+            font-family: ui-monospace, SFMono-Regular, "PingFang SC", sans-serif;
+            font-size: 0.72rem;
+            letter-spacing: 0.12em;
+            color: rgba(255, 255, 255, 0.45);
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pulse-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background-color: #ff69b4;
+            box-shadow: 0 0 8px #ff69b4;
+            animation: pulseDot 2s infinite ease-in-out;
+            flex-shrink: 0;
+        }
+
+        /* 关键帧动画 */
+        @keyframes shimmerFlow {
+            0% { background-position: 200% center; }
+            100% { background-position: -200% center; }
+        }
+
+        @keyframes fadeInSlide {
+            0% {
+                opacity: 0;
+                transform: translateY(14px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes blinkCursor {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        @keyframes pulseDot {
+            0%, 100% { transform: scale(1); opacity: 0.6; }
+            50% { transform: scale(1.6); opacity: 1; }
+        }
+
+        /* 手机端竖屏 (< 768px 且 portrait) 顶部居中排版，下方70%留给3D圣诞树 */
+        @media (max-width: 767px) and (orientation: portrait) {
+            .overlay-container {
+                align-items: flex-start;
+                justify-content: center;
+                padding: max(4vh, env(safe-area-inset-top)) 5vw 0 5vw;
+            }
+            .text-panel {
+                width: 100%;
+                max-width: 440px;
+                align-items: center;
+                text-align: center;
+                gap: 0.4rem;
+            }
+            .tech-tag {
+                font-size: 0.66rem;
+                letter-spacing: 0.16em;
+            }
+            .tech-tag::before {
+                width: 16px;
+            }
+            .main-title {
+                font-size: clamp(2.35rem, 9.5vw, 3.2rem);
+                line-height: 1.08;
+            }
+            .name-wrapper {
+                justify-content: center;
+                gap: 8px;
+                margin-top: 0;
+            }
+            .name-prefix {
+                font-size: 0.78rem;
+            }
+            .recipient-name {
+                font-size: clamp(1.5rem, 6.6vw, 2.1rem);
+                letter-spacing: 0.16em;
+            }
+            .code-subtitle {
+                font-size: 0.74rem;
+                line-height: 1.5;
+                min-height: 2.3em;
+                border-left: none;
+                padding-left: 0;
+                margin-top: 0.15rem;
+                max-width: 92%;
+            }
+            .interaction-hint {
+                left: 50%;
+                transform: translateX(-50%);
+                width: max-content;
+                max-width: 92vw;
+                font-size: 0.66rem;
+                bottom: max(12px, env(safe-area-inset-bottom));
+            }
+        }
+
+        /* 手机横屏紧凑适配 */
+        @media (max-height: 500px) and (orientation: landscape) {
+            .overlay-container {
+                padding: 0 5vw;
+            }
+            .text-panel {
+                max-width: 46%;
+                gap: 0.45rem;
+            }
+            .main-title {
+                font-size: clamp(1.9rem, 4.5vw, 2.8rem);
+            }
+            .recipient-name {
+                font-size: clamp(1.3rem, 3vw, 1.9rem);
+            }
+            .code-subtitle {
+                font-size: 0.74rem;
+                line-height: 1.45;
+                min-height: 2.8em;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 3D 粒子主画布 -->
+    <canvas id="christmas-canvas"></canvas>
+
+    <!-- 梦幻科技文案层（手机竖屏置顶居中，iPad与桌面端居左） -->
+    <div class="overlay-container">
+        <div class="text-panel">
+            <div class="tech-tag">ROMANTIC ALGORITHM // 12.25</div>
+            <h1 class="main-title">Merry Christmas</h1>
+            <div class="name-wrapper">
+                <span class="name-prefix">TO &gt;</span>
+                <span class="recipient-name" id="target-name">丘嘉奎</span><span class="cursor"></span>
+            </div>
+            <p class="code-subtitle" id="typewriter-text"></p>
+        </div>
+    </div>
+
+    <!-- 底部交互提示 -->
+    <div class="interaction-hint">
+        <span class="pulse-dot"></span>
+        <span>滑动或移动调整星夜视角 · 点击释放粉白星尘</span>
+    </div>
+
+    <script>
+        /**
+         * 跨设备兼容 3D 圣诞粒子引擎 (专为 iOS Safari / iPadOS / 微信浏览器深度优化)
+         * 修复要点：
+         * 1. 严格限制 Canvas 物理总像素数 <= 3,500,000，彻底规避 iOS Safari/iPadOS 内存上限黑屏；
+         * 2. 移除离屏 Canvas 精灵缓存，全部采用原生 ctx.beginPath() + ctx.arc() 双层光晕直绘，100% 硬件兼容；
+         * 3. 兼容全版本 JS 引擎，确保手机与平板必出完整圣诞树、爱心与星环。
+         */
+        (function () {
+            var canvas = document.getElementById('christmas-canvas');
+            if (!canvas) return;
+            var ctx = null;
+            try {
+                ctx = canvas.getContext('2d', { alpha: false, desynchronized: true });
+            } catch (e) {
+                ctx = canvas.getContext('2d');
+            }
+            if (!ctx) {
+                canvas.style.display = 'none';
+                return;
+            }
+
+            var width = 0;
+            var height = 0;
+            var renderScale = 1;
+            var lastAppliedW = 0;
+            var lastAppliedH = 0;
+            var isInitialized = false;
+
+            var CONFIG = {
+                treeParticleCount: 1500,
+                ribbonParticleCount: 420,
+                heartParticleCount: 360,
+                ringParticleCount: 720,
+                starCount: 180,
+                snowCount: 110,
+                fov: 680,
+                treeHeight: 400,
+                treeMaxRadius: 165
+            };
+
+            var mouse = {
+                targetX: 0,
+                targetY: 0,
+                currentX: 0,
+                currentY: 0
+            };
+
+            var treeParticles = [];
+            var heartParticles = [];
+            var ringParticles = [];
+            var stars = [];
+            var snowflakes = [];
+            var burstParticles = [];
+
+            /**
+             * 健壮获取视口尺寸（兼容 iPhone / iPad Safari 延迟返回宽高）
+             */
+            function getReliableViewportSize() {
+                var rect = canvas.getBoundingClientRect ? canvas.getBoundingClientRect() : { width: 0, height: 0 };
+                var w = Math.round(
+                    rect.width ||
+                    document.documentElement.clientWidth ||
+                    window.innerWidth ||
+                    (window.screen && window.screen.width) ||
+                    375
+                );
+                var h = Math.round(
+                    rect.height ||
+                    document.documentElement.clientHeight ||
+                    window.innerHeight ||
+                    (window.screen && window.screen.height) ||
+                    667
+                );
+                return {
+                    w: w > 10 ? w : 375,
+                    h: h > 10 ? h : 667
+                };
+            }
+
+            /**
+             * 仅在手机竖屏模式下采用上下布局，iPad 与桌面宽屏统一采用左右分栏
+             */
+            function isMobilePortrait(w, h) {
+                return w < 768 && h > w;
+            }
+
+            /**
+             * 计算安全画布物理分辨率（严格限制总像素面积，防 iOS / iPadOS Canvas 静默失效）
+             */
+            function updateLayoutMetrics() {
+                var size = getReliableViewportSize();
+                width = size.w;
+                height = size.h;
+
+                var isAppleMobile = /iPhone|iPad|iPod/.test(navigator.userAgent) ||
+                    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+                var dpr = Math.min(window.devicePixelRatio || 1, isAppleMobile ? 1.15 : 1.5);
+                // iOS/iPadOS 对高频 Canvas 绘制和显存分配较敏感，采用更保守的像素上限。
+                var maxSafePixels = isAppleMobile ? 1800000 : 3500000;
+                var rawPixels = width * height * dpr * dpr;
+
+                if (rawPixels > maxSafePixels) {
+                    renderScale = Math.sqrt(maxSafePixels / (width * height));
+                } else {
+                    renderScale = dpr;
+                }
+
+                canvas.width = Math.max(1, Math.floor(width * renderScale));
+                canvas.height = Math.max(1, Math.floor(height * renderScale));
+                ctx.setTransform(renderScale, 0, 0, renderScale, 0, 0);
+
+                lastAppliedW = width;
+                lastAppliedH = height;
+
+                if (isMobilePortrait(width, height)) {
+                    var maxAllowedWidthRadius = (width * 0.86) / 3.12;
+                    var maxAllowedHeight = height * 0.54;
+                    var computedHeight = Math.min(maxAllowedHeight, maxAllowedWidthRadius * 2.45);
+
+                    CONFIG.treeHeight = Math.max(220, computedHeight);
+                    CONFIG.treeMaxRadius = CONFIG.treeHeight * 0.42;
+                    CONFIG.fov = Math.max(540, height * 0.85);
+                } else {
+                    var rightPanelWidth = width * 0.56;
+                    var maxRadiusByWidth = (rightPanelWidth * 0.88) / 3.12;
+                    var maxHeightByScreen = height * 0.65;
+                    var computedHeight = Math.min(maxHeightByScreen, maxRadiusByWidth * 2.45);
+
+                    CONFIG.treeHeight = Math.max(240, Math.min(520, computedHeight));
+                    CONFIG.treeMaxRadius = CONFIG.treeHeight * 0.42;
+                    CONFIG.fov = Math.max(620, Math.min(820, height * 0.92));
+                }
+            }
+
+            /**
+             * 绘制单颗双层发光粒子（原生 arc + fill，iPhone/iPad 100% 兼容且无离屏纹理缺陷）
+             */
+            function drawGlowDot(x, y, radius, colorType, alpha) {
+                if (alpha <= 0.02 || radius <= 0.08) return;
+
+                var outerFill = 'rgba(255, 240, 250, 0.22)';
+                var coreFill = '#ffffff';
+
+                if (colorType === 'pinkLight') {
+                    outerFill = 'rgba(255, 145, 200, 0.26)';
+                    coreFill = '#ffd6ea';
+                } else if (colorType === 'pinkDeep') {
+                    outerFill = 'rgba(255, 65, 160, 0.28)';
+                    coreFill = '#ff7eb9';
+                }
+
+                // 外层柔和光晕
+                ctx.globalAlpha = alpha * 0.55;
+                ctx.fillStyle = outerFill;
+                ctx.beginPath();
+                ctx.arc(x, y, radius * 2.35, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 内层高光核心
+                ctx.globalAlpha = alpha;
+                ctx.fillStyle = coreFill;
+                ctx.beginPath();
+                ctx.arc(x, y, radius * 0.9, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            /**
+             * 1. 生成 3D 圣诞树粒子
+             */
+            function initTreeParticles() {
+                treeParticles = [];
+                var H = CONFIG.treeHeight;
+                var R = CONFIG.treeMaxRadius;
+                var compact = width < 768;
+                var isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+                var treeCount = compact ? 760 : (isTouchDevice ? 1050 : CONFIG.treeParticleCount);
+                var ribbonCount = compact ? 220 : (isTouchDevice ? 300 : CONFIG.ribbonParticleCount);
+
+                for (var i = 0; i < treeCount; i++) {
+                    var yNorm = Math.pow(Math.random(), 0.82);
+                    var y = (yNorm - 0.5) * H;
+                    var tierWave = 1 + 0.14 * Math.sin(yNorm * Math.PI * 9);
+                    var maxRAtY = yNorm * R * tierWave;
+                    var radiusRatio = Math.pow(Math.random(), 0.42);
+                    var r = maxRAtY * radiusRatio;
+                    var theta = Math.random() * Math.PI * 2;
+
+                    var randColor = Math.random();
+                    var colorType = 'white';
+                    if (randColor < 0.36) colorType = 'pinkLight';
+                    else if (randColor < 0.62) colorType = 'pinkDeep';
+
+                    treeParticles.push({
+                        baseR: r,
+                        theta: theta,
+                        y: y,
+                        yNorm: yNorm,
+                        size: (Math.random() * 1.45 + 0.85) * (1.15 - yNorm * 0.18),
+                        colorType: colorType,
+                        phase: Math.random() * Math.PI * 2,
+                        twinkleSpeed: 1.8 + Math.random() * 3.2,
+                        swayAmp: 1.2 + Math.random() * 2.0,
+                        isRibbon: false
+                    });
+                }
+
+                for (var j = 0; j < ribbonCount; j++) {
+                    var progress = j / ribbonCount;
+                    var ryNorm = progress;
+                    var ry = (ryNorm - 0.5) * H;
+                    var strand = j % 2 === 0 ? 0 : Math.PI;
+                    var turns = 4.5;
+                    var rTheta = progress * Math.PI * 2 * turns + strand + (Math.random() - 0.5) * 0.16;
+                    var rr = (ryNorm * R + 5) + (Math.random() - 0.5) * 5;
+
+                    treeParticles.push({
+                        baseR: rr,
+                        theta: rTheta,
+                        y: ry,
+                        yNorm: ryNorm,
+                        size: Math.random() * 1.65 + 1.05,
+                        colorType: j % 3 === 0 ? 'white' : 'pinkLight',
+                        phase: progress * 12,
+                        twinkleSpeed: 3.5,
+                        swayAmp: 0.7,
+                        isRibbon: true
+                    });
+                }
+            }
+
+            /**
+             * 2. 生成树顶 3D 立体爱心粒子
+             */
+            function initHeartParticles() {
+                heartParticles = [];
+                var topOffset = Math.max(18, CONFIG.treeHeight * 0.068);
+                var topY = -0.5 * CONFIG.treeHeight - topOffset;
+                var heartScale = CONFIG.treeHeight * 0.0048;
+                var isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+                var count = width < 768 ? 190 : (isTouchDevice ? 260 : CONFIG.heartParticleCount);
+
+                for (var i = 0; i < count; i++) {
+                    var t = Math.random() * Math.PI * 2;
+                    var hx = 16 * Math.pow(Math.sin(t), 3);
+                    var hy = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
+                    var fill = Math.pow(Math.random(), 0.35);
+                    var zThickness = (1 - fill * 0.65) * 14 * (Math.random() > 0.5 ? 1 : -1) * Math.random();
+
+                    heartParticles.push({
+                        lx: hx * fill * heartScale,
+                        ly: hy * fill * heartScale,
+                        lz: zThickness * heartScale * 5.2,
+                        baseTopY: topY,
+                        size: Math.random() * 1.55 + 0.95,
+                        colorType: Math.random() > 0.22 ? 'pinkDeep' : 'pinkLight',
+                        phase: Math.random() * Math.PI * 2
+                    });
+                }
+            }
+
+            /**
+             * 3. 生成树底白色粒子旋转星环
+             */
+            function initRingParticles() {
+                ringParticles = [];
+                var baseY = 0.51 * CONFIG.treeHeight;
+                var baseRadius = CONFIG.treeMaxRadius * 1.08;
+                var compact = width < 768;
+                var isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+
+                var ringTracks = [
+                    { radius: baseRadius * 1.02, spread: 8, count: compact ? 130 : (isTouchDevice ? 180 : 260), speed: 0.45, size: 1.3 },
+                    { radius: baseRadius * 1.25, spread: 13, count: compact ? 135 : (isTouchDevice ? 190 : 280), speed: -0.32, size: 1.2 },
+                    { radius: baseRadius * 1.48, spread: 18, count: compact ? 95 : (isTouchDevice ? 130 : 200), speed: 0.24, size: 1.05 }
+                ];
+
+                for (var tIdx = 0; tIdx < ringTracks.length; tIdx++) {
+                    var track = ringTracks[tIdx];
+                    for (var i = 0; i < track.count; i++) {
+                        var angle = (i / track.count) * Math.PI * 2 + Math.random() * 0.15;
+                        var rOffset = (Math.random() - 0.5) * track.spread;
+                        var yOffset = (Math.random() - 0.5) * 3.5;
+
+                        ringParticles.push({
+                            radius: track.radius + rOffset,
+                            angle: angle,
+                            baseY: baseY + yOffset,
+                            speed: track.speed,
+                            size: track.size * (0.75 + Math.random() * 0.65),
+                            phase: Math.random() * Math.PI * 2,
+                            colorType: Math.random() > 0.12 ? 'white' : 'pinkLight'
+                        });
+                    }
+                }
+            }
+
+            /**
+             * 4. 初始化深空闪烁星辰与雪花
+             */
+            function initBackgroundParticles() {
+                var compact = width < 768;
+                var isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+                var starTotal = compact ? 90 : (isTouchDevice ? 130 : CONFIG.starCount);
+                var snowTotal = compact ? 55 : (isTouchDevice ? 75 : CONFIG.snowCount);
+
+                stars = [];
+                for (var i = 0; i < starTotal; i++) {
+                    stars.push({
+                        x: Math.random() * width,
+                        y: Math.random() * height,
+                        size: Math.random() * 1.25 + 0.5,
+                        alpha: Math.random() * 0.8 + 0.2,
+                        twinkleSpeed: 0.8 + Math.random() * 2.5,
+                        phase: Math.random() * Math.PI * 2
+                    });
+                }
+
+                snowflakes = [];
+                for (var j = 0; j < snowTotal; j++) {
+                    snowflakes.push({
+                        x: Math.random() * width,
+                        y: Math.random() * height,
+                        z: Math.random() * 0.8 + 0.2,
+                        size: Math.random() * 1.45 + 0.65,
+                        speedY: Math.random() * 0.52 + 0.2,
+                        driftAmp: Math.random() * 0.55 + 0.2,
+                        phase: Math.random() * Math.PI * 2
+                    });
+                }
+            }
+
+            /**
+             * 重建场景粒子
+             */
+            function rebuildScene() {
+                updateLayoutMetrics();
+                if (width <= 10 || height <= 10) return;
+
+                initTreeParticles();
+                initHeartParticles();
+                initRingParticles();
+                initBackgroundParticles();
+                isInitialized = true;
+            }
+
+            /**
+             * 3D 坐标透视投影
+             */
+            function project3D(x, y, z, centerX, centerY, tiltX) {
+                var cosX = Math.cos(tiltX);
+                var sinX = Math.sin(tiltX);
+                var y1 = y * cosX - z * sinX;
+                var z1 = y * sinX + z * cosX;
+
+                var depth = CONFIG.fov + z1 + 240;
+                if (depth <= 10) return null;
+
+                var scale = CONFIG.fov / depth;
+                return {
+                    x: centerX + x * scale,
+                    y: centerY + y1 * scale,
+                    scale: scale
+                };
+            }
+
+            /**
+             * 点击/触摸释放粉白星尘烟花
+             */
+            function spawnBurst(x, y) {
+                for (var i = 0; i < 28; i++) {
+                    var angle = Math.random() * Math.PI * 2;
+                    var speed = Math.random() * 3.4 + 0.9;
+                    burstParticles.push({
+                        x: x,
+                        y: y,
+                        vx: Math.cos(angle) * speed,
+                        vy: Math.sin(angle) * speed - 0.5,
+                        life: 1.0,
+                        decay: 0.018 + Math.random() * 0.015,
+                        size: Math.random() * 1.8 + 1.1,
+                        colorType: Math.random() > 0.45 ? 'pinkDeep' : 'white'
+                    });
+                }
+            }
+
+            var startTime = Date.now();
+
+            /**
+             * 主渲染循环
+             */
+            function render() {
+                try {
+                    var currentSize = getReliableViewportSize();
+                    if (
+                        !isInitialized ||
+                        Math.abs(currentSize.w - lastAppliedW) > 2 ||
+                        Math.abs(currentSize.h - lastAppliedH) > 2 ||
+                        treeParticles.length === 0
+                    ) {
+                        rebuildScene();
+                    }
+
+                    var elapsed = (Date.now() - startTime) * 0.001;
+
+                    mouse.currentX += (mouse.targetX - mouse.currentX) * 0.055;
+                    mouse.currentY += (mouse.targetY - mouse.currentY) * 0.055;
+
+                    // 1. 纯黑背景
+                    ctx.globalCompositeOperation = 'source-over';
+                    ctx.globalAlpha = 1;
+                    ctx.fillStyle = '#000000';
+                    ctx.fillRect(0, 0, width, height);
+
+                    var portraitPhone = isMobilePortrait(width, height);
+                    var treeCenterX = (portraitPhone ? width * 0.5 : width * 0.66) + mouse.currentX * (portraitPhone ? 14 : 26);
+                    var treeCenterY = (portraitPhone ? height * 0.61 : height * 0.51) + mouse.currentY * (portraitPhone ? 10 : 18);
+                    var cameraTiltX = (portraitPhone ? 0.17 : 0.14) + mouse.currentY * 0.12;
+
+                    // 使用兼容所有 iOS 版本的 lighter 叠加模式
+                    ctx.globalCompositeOperation = 'lighter';
+
+                    // 2. 背景星空
+                    for (var sIdx = 0; sIdx < stars.length; sIdx++) {
+                        var s = stars[sIdx];
+                        var twinkle = 0.45 + 0.55 * Math.sin(elapsed * s.twinkleSpeed + s.phase);
+                        var px = s.x + mouse.currentX * 6;
+                        var py = s.y + mouse.currentY * 6;
+                        drawGlowDot(px, py, s.size, 'white', s.alpha * twinkle);
+                    }
+
+                    // 3. 树底白色旋转星环
+                    var ringPulse = 1 + 0.024 * Math.sin(elapsed * 2.0);
+                    for (var rIdx = 0; rIdx < ringParticles.length; rIdx++) {
+                        var rp = ringParticles[rIdx];
+                        var currentAngle = rp.angle + elapsed * rp.speed + mouse.currentX * 0.4;
+                        var waveY = Math.sin(currentAngle * 3 + elapsed * 2.5) * 3.0;
+
+                        var rx = Math.cos(currentAngle) * rp.radius * ringPulse;
+                        var rz = Math.sin(currentAngle) * rp.radius * ringPulse;
+                        var ry = rp.baseY + waveY;
+
+                        var rProj = project3D(rx, ry, rz, treeCenterX, treeCenterY, cameraTiltX);
+                        if (!rProj) continue;
+
+                        var rTwinkle = 0.55 + 0.45 * Math.sin(elapsed * 3.0 + rp.phase);
+                        var depthFade = Math.max(0.3, Math.min(1, rProj.scale * 1.1));
+                        drawGlowDot(
+                            rProj.x,
+                            rProj.y,
+                            rp.size * rProj.scale,
+                            rp.colorType,
+                            rTwinkle * depthFade * 0.92
+                        );
+                    }
+
+                    // 4. 3D 粉白粒子圣诞树
+                    var treeRotation = elapsed * 0.48 + mouse.currentX * 0.65;
+                    for (var tIdx = 0; tIdx < treeParticles.length; tIdx++) {
+                        var tp = treeParticles[tIdx];
+                        var angle = tp.theta + treeRotation;
+
+                        var breathe = 1 + 0.022 * Math.sin(elapsed * 2.2 - tp.yNorm * 4);
+                        var r = tp.baseR * breathe;
+                        var floatY = tp.y + Math.sin(elapsed * 1.8 + tp.phase) * tp.swayAmp;
+
+                        var tx = Math.cos(angle) * r;
+                        var tz = Math.sin(angle) * r;
+
+                        var tProj = project3D(tx, floatY, tz, treeCenterX, treeCenterY, cameraTiltX);
+                        if (!tProj) continue;
+
+                        var waveBoost = tp.isRibbon
+                            ? (0.74 + 0.26 * Math.sin(elapsed * 5 - tp.yNorm * 10))
+                            : (0.60 + 0.40 * Math.sin(elapsed * tp.twinkleSpeed + tp.phase));
+
+                        var depthAlpha = Math.max(0.38, Math.min(1, tProj.scale * 1.12));
+                        drawGlowDot(
+                            tProj.x,
+                            tProj.y,
+                            tp.size * tProj.scale * (tp.isRibbon ? 1.15 : 1.0),
+                            tp.colorType,
+                            waveBoost * depthAlpha
+                        );
+                    }
+
+                    // 5. 树顶 3D 立体跳动粉色粒子爱心
+                    var beatCycle = (elapsed * 1.35) % 1;
+                    var heartBeat = 1 + 0.16 * Math.exp(-beatCycle * 9) * Math.sin(beatCycle * Math.PI * 4);
+                    var heartRot = elapsed * 1.15 - mouse.currentX * 0.5;
+                    var cosH = Math.cos(heartRot);
+                    var sinH = Math.sin(heartRot);
+
+                    var topOffset = Math.max(18, CONFIG.treeHeight * 0.068);
+                    var heartBaseY = -0.5 * CONFIG.treeHeight - topOffset;
+
+                    // 爱心中心柔和光晕
+                    var heartCenterProj = project3D(0, heartBaseY, 0, treeCenterX, treeCenterY, cameraTiltX);
+                    if (heartCenterProj) {
+                        ctx.globalAlpha = 0.26;
+                        ctx.fillStyle = 'rgba(255, 70, 165, 0.35)';
+                        ctx.beginPath();
+                        ctx.arc(
+                            heartCenterProj.x,
+                            heartCenterProj.y,
+                            (portraitPhone ? 24 : 32) * heartBeat * heartCenterProj.scale,
+                            0,
+                            Math.PI * 2
+                        );
+                        ctx.fill();
+                    }
+
+                    for (var hIdx = 0; hIdx < heartParticles.length; hIdx++) {
+                        var hp = heartParticles[hIdx];
+                        var sx = hp.lx * heartBeat;
+                        var sy = hp.ly * heartBeat;
+                        var sz = hp.lz * heartBeat;
+
+                        var hrx = sx * cosH - sz * sinH;
+                        var hrz = sx * sinH + sz * cosH;
+                        var hry = heartBaseY + sy;
+
+                        var hProj = project3D(hrx, hry, hrz, treeCenterX, treeCenterY, cameraTiltX);
+                        if (!hProj) continue;
+
+                        var sparkle = 0.76 + 0.24 * Math.sin(elapsed * 4.5 + hp.phase);
+                        drawGlowDot(
+                            hProj.x,
+                            hProj.y,
+                            hp.size * hProj.scale * 1.08,
+                            hp.colorType,
+                            sparkle
+                        );
+                    }
+
+                    // 6. 飘落白色雪花粒子
+                    for (var fIdx = 0; fIdx < snowflakes.length; fIdx++) {
+                        var sf = snowflakes[fIdx];
+                        sf.y += sf.speedY * (0.6 + sf.z * 0.7);
+                        sf.x += Math.sin(elapsed * 0.9 + sf.phase) * sf.driftAmp + mouse.currentX * 0.4 * sf.z;
+
+                        if (sf.y > height + 10) {
+                            sf.y = -10;
+                            sf.x = Math.random() * width;
+                        }
+                        if (sf.x > width + 10) sf.x = -10;
+                        if (sf.x < -10) sf.x = width + 10;
+
+                        drawGlowDot(
+                            sf.x,
+                            sf.y,
+                            sf.size * (0.65 + sf.z * 0.65),
+                            'white',
+                            0.35 + sf.z * 0.55
+                        );
+                    }
+
+                    // 7. 点击释放星尘烟花
+                    for (var bIdx = burstParticles.length - 1; bIdx >= 0; bIdx--) {
+                        var bp = burstParticles[bIdx];
+                        bp.x += bp.vx;
+                        bp.y += bp.vy;
+                        bp.vy += 0.035;
+                        bp.vx *= 0.98;
+                        bp.life -= bp.decay;
+
+                        if (bp.life <= 0) {
+                            burstParticles.splice(bIdx, 1);
+                            continue;
+                        }
+
+                        drawGlowDot(bp.x, bp.y, bp.size * bp.life, bp.colorType, bp.life);
+                    }
+                } catch (err) {
+                    // 静默捕获偶发帧异常，保证下一帧继续渲染
+                }
+
+                requestAnimationFrame(render);
+            }
+
+            /**
+             * 浪漫打字机寄语
+             */
+            function startTypewriter() {
+                var targetEl = document.getElementById('typewriter-text');
+                if (!targetEl) return;
+                var lines = [
+                    'while (winter.isCold()) { sendWarmth("丘嘉奎"); }',
+                    '愿漫天粉白星尘与跳动的光，点亮你的整个圣诞星夜。'
+                ];
+                var lineIndex = 0;
+                var charIndex = 0;
+                var currentHTML = '';
+
+                function typeNext() {
+                    if (lineIndex >= lines.length) return;
+
+                    var currentLine = lines[lineIndex];
+                    if (charIndex < currentLine.length) {
+                        currentHTML += currentLine.charAt(charIndex);
+                        targetEl.innerHTML = currentHTML;
+                        charIndex++;
+                        setTimeout(typeNext, lineIndex === 0 ? 40 : 65);
+                    } else {
+                        lineIndex++;
+                        charIndex = 0;
+                        if (lineIndex < lines.length) {
+                            currentHTML += '<br>';
+                            setTimeout(typeNext, 420);
+                        }
+                    }
+                }
+
+                setTimeout(typeNext, 850);
+            }
+
+            /**
+             * 绑定交互与窗口尺寸事件
+             */
+            function bindEvents() {
+                var resizeTimer = null;
+                function scheduleRebuild() {
+                    clearTimeout(resizeTimer);
+                    resizeTimer = setTimeout(rebuildScene, 60);
+                }
+
+                window.addEventListener('resize', scheduleRebuild);
+                window.addEventListener('orientationchange', function () {
+                    setTimeout(rebuildScene, 180);
+                });
+                window.addEventListener('pageshow', function () {
+                    scheduleRebuild();
+                    // Safari may restore a page from the back-forward cache with a stale canvas.
+                    setTimeout(scheduleRebuild, 300);
+                });
+                document.addEventListener('visibilitychange', function () {
+                    if (!document.hidden) scheduleRebuild();
+                });
+                if (window.visualViewport) {
+                    window.visualViewport.addEventListener('resize', scheduleRebuild);
+                }
+
+                window.addEventListener('mousemove', function (e) {
+                    if (width <= 0 || height <= 0) return;
+                    mouse.targetX = (e.clientX / width - 0.5) * 2;
+                    mouse.targetY = (e.clientY / height - 0.5) * 2;
+                });
+
+                window.addEventListener('touchmove', function (e) {
+                    if (e.touches && e.touches.length > 0 && width > 0 && height > 0) {
+                        var touch = e.touches[0];
+                        mouse.targetX = (touch.clientX / width - 0.5) * 2;
+                        mouse.targetY = (touch.clientY / height - 0.5) * 2;
+                    }
+                }, { passive: true });
+
+                window.addEventListener('click', function (e) {
+                    spawnBurst(e.clientX, e.clientY);
+                });
+
+                window.addEventListener('touchstart', function (e) {
+                    if (e.touches && e.touches.length > 0) {
+                        spawnBurst(e.touches[0].clientX, e.touches[0].clientY);
+                    }
+                }, { passive: true });
+            }
+
+            function bootstrap() {
+                rebuildScene();
+                bindEvents();
+                startTypewriter();
+                requestAnimationFrame(render);
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', bootstrap);
+            } else {
+                bootstrap();
+            }
+        })();
+    </script>
+</body>
+</html>
